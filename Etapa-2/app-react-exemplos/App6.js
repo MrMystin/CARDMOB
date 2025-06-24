@@ -2,28 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Button, Image, TextInput, FlatList, Alert } from 'react-native';
 
-const BASE_URL = 'http://10.81.205.40:5000';
+const BASE_URL = 'http://10.81.205.40:3000';
 
 export default function App() {
-  const [catalog, setCatalog] = useState([]);
+  const [list, setList] = useState([]);
   const [name, setName] = useState('');
-  const [price, setPrice] = useState(null);
-  const [description, setDescription] = useState('');
-
+  const [quant, setQuant] = useState('');
   const [editItemId, setEditItemId] = useState(null);
   const [editName, setEditName] = useState('');
-  const [editPrice, setEditPrice] = useState(null);
-  const [editDescription, setEditDescription] = useState('');
+  const [editQuant, setEditQuant] = useState('');
 
   const [loading, setLoading] = useState(false);
 
-  // Search
+  // Buscar
   const fetchCompras = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${BASE_URL}/api/catalog?page=1`);
+      const response = await fetch(`${BASE_URL}/compras`);
       const data = await response.json();
-      setCatalog(data.catalog)
+      setList(data);
     } catch (error) {
       console.error('Error fetching items:', error);
     }
@@ -37,22 +34,21 @@ export default function App() {
 
   // Create
   const addItem = async () => {
+    if (name.trim() === '' || quant.trim() === '' ) {
+      return;
+    }
     try {
-      if (name.trim() === '' || price === null || description.trim() === '') {
-        return;
-      }
-      const response = await fetch(`${BASE_URL}/api/catalog`, {
+      const response = await fetch(`${BASE_URL}/compras`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({name: name.trim(), description: description.trim(), price: Number(price)}),
+        body: JSON.stringify({name: name.trim(), quant: quant.trim()}),
       });
       if (response.ok) {
         await fetchCompras();
         setName('');
-        setDescription('');
-        setPrice('');
+        setQuant('');
       }
       else {
         console.error('Failed to add item:', response.status);
@@ -67,37 +63,28 @@ export default function App() {
   // Update
   const updateItem = async (id) => {
     try {
-      if (editName.trim() === '' || editPrice === null || editDescription.trim() === '') {
+      if (editName.trim() === '' || editQuant.trim() === '' ) {
         return;
       }
-      const response = await fetch(`${BASE_URL}/api/catalog/${id}`, {
-        method: 'PATCH',
+      const response = await fetch(`${BASE_URL}/compras/${id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({name: editName.trim(), description: editDescription.trim(), price: Number(editPrice)}),
+        body: JSON.stringify({name: editName.trim(), quant: editQuant.trim()}),
       });
       if (response.ok) {
         await fetchCompras();
-        setEditItemId(null)
+        setEditItemId(null);
         setEditName('');
-        setEditDescription('');
-        setEditPrice('');
+        setEditQuant('');
       }
       else {
         console.error('Failed to update item:', response.status);
-        setEditItemId(null)
-        setEditName('');
-        setEditDescription('');
-        setEditPrice('');
       }
     }
     catch (error) {
       console.error('Error updating item:', error)
-      setEditItemId(null)
-      setEditName('');
-      setEditDescription('');
-      setEditPrice('');
     }
 
   }
@@ -113,7 +100,7 @@ export default function App() {
           text: 'Delete',
           onPress: async () => {
             try {
-              const response = await fetch(`${BASE_URL}/api/catalog/${id}`, {
+              const response = await fetch(`${BASE_URL}/compras/${id}`, {
                 method: 'DELETE'
               });
               if (response.ok) {
@@ -138,15 +125,10 @@ export default function App() {
     if (item.id != editItemId) {
       return (
         <View style={styles.item}>
-          <Image 
-            source={{uri: item.image}}
-            style={{width: 200, height: 200}}
-          />
           <Text style={styles.itemText}>{item.name}</Text>
-          <Text style={styles.itemText}>{item.description}</Text>
-          <Text style={styles.itemText}>{Number(item.price)}</Text>
+          <Text style={styles.itemText}>{item.quant}</Text>
           <View style={styles.buttons}>
-            <Button title='Edit' onPress={() => {setEditItemId(item.id), setEditName(item.name), setEditPrice(item.price), setEditDescription(item.description);}}></Button>
+            <Button title='Edit' onPress={() => {setEditItemId(item.id), setEditName(item.name), setEditQuant(item.quant);}}></Button>
             <Button title='Delete' onPress={() => {deleteItem(item.id)}}></Button>
           </View>
         </View>
@@ -159,20 +141,17 @@ export default function App() {
             style={styles.editInput}
             onChangeText={setEditName}
             value={editName}
-          />
-          <TextInput 
-            style={styles.editInput}
-            onChangeText={setEditDescription}
-            value={editDescription}
+            autoFocus
           />
           <TextInput 
             style={styles.editInput}
             keyboardType="numeric"
             onChangeText={(text) => {
-              const numericText = text.replace(/[^0-9.]/g, '');
-              setEditPrice(numericText);
+              const numericText = text.replace(/[^0-9]/g, '');
+              setEditQuant(numericText);
             }}
-            value={editPrice?.toString()}
+            value={editQuant}
+            autoFocus
           />
           <Button title='Update' onPress={() => updateItem(item.id)}></Button>
         </View>
@@ -191,25 +170,19 @@ export default function App() {
       <TextInput 
         style={styles.input}
         keyboardType="numeric"
-        value={price}
+        value={quant}
         onChangeText={(text) => {
           const numericText = text.replace(/[^0-9]/g, '');
-          setPrice(Number(numericText));
+          setQuant(numericText);
         }}
-        placeholder='Enter price'
-      />
-      <TextInput 
-        style={styles.input}
-        value={description}
-        onChangeText={setDescription}
-        placeholder='Enter description'
+        placeholder='Enter amount'
       />
       <Button 
         title='Add Item'
         onPress={addItem}
       />
       <FlatList
-        data={catalog}
+        data={list}
         renderItem={renderItem}
         keyExtractor={item => item.id}
         style={styles.list}
@@ -243,7 +216,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   item: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 10,
