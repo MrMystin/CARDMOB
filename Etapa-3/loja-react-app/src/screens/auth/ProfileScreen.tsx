@@ -1,27 +1,30 @@
-import React, {useEffect, useState} from "react";
-import { View, Text, Button, StyleSheet, Image } from "react-native";
+import React, { useEffect, useState } from "react"; // modificado
+import { View, Text, Button, StyleSheet, Image } from "react-native"; // modificado
 
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 
-import { requestProfileById } from "../../services/profileService";
+import { requestProfileById } from "../../services/profileService"; // novo 
 
 function ProfileScreen({ navigation }: any) {
     const { theme, toggleTheme } = useTheme();
-    const { logout } = useAuth();
-    const [user, setUser] = useState([]);
+    const { logout, userData } = useAuth();
+    const [user, setUser] = useState({}); // novo
 
+    // novo
     useEffect(() => {
         const fetchProfile = async () => {
             try {
+                console.log(userData); // novo
                 const user = await requestProfileById(1);
                 console.log(user);
                 setUser(user);
-                console.log('Carregou o usuário!')
-            } catch (error) {
+                console.log('Carregou o usuário!');
+            }
+            catch (error) {
                 console.error('Erro ao carregar o perfil do usuário:', error);
             }
-        };
+        }
         fetchProfile();
     }, []);
 
@@ -35,6 +38,7 @@ function ProfileScreen({ navigation }: any) {
             </View>
             <Text style={styles.text}>{user.name}</Text>
             <Text style={styles.text}>{user.email}</Text>
+
             <Button title="Alternar Tema" color={theme.colors.primary} onPress={toggleTheme}/>
             <Button title="Ir para Detalhes" onPress={ () => navigation.navigate('Details')} />
             <Button title="Sair" onPress={logout}/>
@@ -49,11 +53,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    image: {
+    image: { // novo
+        height: 100,
         width: 100,
-        height: 80,
     },
-    text: {
-        fontSize: 14,
-    },
+    text: { fontSize: 14} // novo
 });
